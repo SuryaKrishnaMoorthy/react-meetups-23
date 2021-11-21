@@ -1,49 +1,65 @@
+import { MongoClient, ObjectId } from "mongodb";
 import MeetupDetail from "../../components/meetups/MeetupDetail";
 
-const MeetupDetailsPage = () => {
+const MeetupDetailsPage = (props) => {
   return (
     <MeetupDetail
-      image="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Place_Jacobins_Lyon.jpg/1920px-Place_Jacobins_Lyon.jpg"
-      title="A meetup"
-      address="Some street 5, Some City"
-      description="Some description"
+      image={props.meetupData.image}
+      title={props.meetupData.title}
+      address={props.meetupData.address}
+      description={props.meetupData.description}
     />
   );
 };
 
 export const getStaticPaths = async () => {
+  const client = await MongoClient.connect(
+    "mongodb+srv://SuryaKrishnaMoorthy:oN2lNrSD8XTbfAf6@cluster0.zo7nb.mongodb.net/meetups?retryWrites=true&w=majority"
+  );
+  const db = client.db();
+
+  const meetupsCollection = db.collection("meetups");
+
+  const meetups = await meetupsCollection.find({}, { _id: 1 }).toArray();
+
+  client.close();
+
   return {
     fallback: false,
-    paths: [
-      {
-        params: {
-          meetupId:'m1',
-        },
-      },
-      {
-        params: {
-          meetupId:'m2',
-        },
-      }
-    ]
-  }
+    paths: meetups.map((meetup) => ({
+      params: { meetupId: meetup._id.toString() },
+    })),
+  };
 };
 
-export  const getStaticProps = async (context) => {
-  //fetch data from an api
-
+export const getStaticProps = async (context) => {
   const meetupId = context.params.meetupId;
   console.log(meetupId); //doesnt get printed on the web console since this code runs in the server
 
+  //fetch data from an api
+  const client = await MongoClient.connect(
+    "mongodb+srv://SuryaKrishnaMoorthy:oN2lNrSD8XTbfAf6@cluster0.zo7nb.mongodb.net/meetups?retryWrites=true&w=majority"
+  );
+  const db = client.db();
+
+  const meetupsCollection = db.collection("meetups");
+
+  const selectedMeetup = await meetupsCollection.findOne({ _id: ObjectId(meetupId) });
+
+  client.close();
+
   return {
     props: {
-      image: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Place_Jacobins_Lyon.jpg/1920px-Place_Jacobins_Lyon.jpg",
-      title: "A meetup",
-      address: "Some street 5, Some City",
-      description: "Some description"
+      meetupData: {
+        id: selectedMeetup._id.toString(),
+        title: selectedMeetup.title,
+        image: selectedMeetup.image,
+        address: selectedMeetup.address,
+        description: selectedMeetup.description
+      },
     },
-    revalidate: 1
-  }
-}
+    revalidate: 1,
+  };
+};
 
 export default MeetupDetailsPage;
