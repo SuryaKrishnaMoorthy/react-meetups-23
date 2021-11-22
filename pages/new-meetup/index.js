@@ -24,7 +24,7 @@ const NewMeetupPage = () => {
   return (
     <Fragment>
       <Head>
-        <title>React Meetups</title>
+        <title>Add a New Meetup</title>
         <meta
           name="description"
           content="Add your own meetups and create amazing networking opportunities!"
